@@ -15,8 +15,13 @@ mod linux4_14;
 #[cfg(feature = "linux5_7")]
 mod linux5_7;
 
+#[cfg(feature = "linux5_13")]
+mod linux5_13;
+
 cfg_if! {
-    if #[cfg(feature = "linux5_7")] {
+    if #[cfg(feature = "linux5_13")] {
+        pub use crate::linux5_13::*;
+    } else if #[cfg(feature = "linux5_7")] {
         pub use crate::linux5_7::*;
     } else if #[cfg(feature = "linux4_14")] {
         pub use crate::linux4_14::*;
