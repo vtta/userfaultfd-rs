@@ -32,7 +32,6 @@ pub const UFFDIO_UNREGISTER: u32 = 0x8010aa01;
 pub const UFFDIO_WAKE: u32 = 0x8010aa02;
 pub const UFFDIO_COPY: u32 = 0xc028aa03;
 pub const UFFDIO_ZEROPAGE: u32 = 0xc020aa04;
-pub const UFFDIO_WRITEPROTECT: u32 = 0xc018aa06;
 
 #[cfg(test)]
 mod const_tests {
@@ -55,7 +54,6 @@ mod const_tests {
         static _const_UFFDIO_WAKE: u32;
         static _const_UFFDIO_COPY: u32;
         static _const_UFFDIO_ZEROPAGE: u32;
-        static _const_UFFDIO_WRITEPROTECT: u32;
     }
 
     #[test]
@@ -104,10 +102,6 @@ mod const_tests {
             assert_eq!(UFFDIO_WAKE, _const_UFFDIO_WAKE, "UFFDIO_WAKE");
             assert_eq!(UFFDIO_COPY, _const_UFFDIO_COPY, "UFFDIO_COPY");
             assert_eq!(UFFDIO_ZEROPAGE, _const_UFFDIO_ZEROPAGE, "UFFDIO_ZEROPAGE");
-            assert_eq!(
-                UFFDIO_WRITEPROTECT, _const_UFFDIO_WRITEPROTECT,
-                "UFFDIO_WRITEPROTECT"
-            );
         }
     }
 }
