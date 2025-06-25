@@ -52,6 +52,8 @@ mod const_tests {
         static _const_UFFDIO_COPY_MODE_DONTWAKE: u64;
         static _const_UFFDIO_COPY_MODE_WP: u64;
         static _const_UFFDIO_ZEROPAGE_MODE_DONTWAKE: u64;
+        static _const_UFFDIO_WRITEPROTECT_MODE_WP: u64;
+        static _const_UFFDIO_WRITEPROTECT_MODE_DONTWAKE: u64;
         static _const_UFFDIO_API: u32;
         static _const_UFFDIO_REGISTER: u32;
         static _const_UFFDIO_UNREGISTER: u32;
@@ -97,6 +99,14 @@ mod const_tests {
             assert_eq!(
                 UFFDIO_ZEROPAGE_MODE_DONTWAKE, _const_UFFDIO_ZEROPAGE_MODE_DONTWAKE,
                 "UFFDIO_ZEROPAGE_MODE_DONTWAKE"
+            );
+            assert_eq!(
+                UFFDIO_WRITEPROTECT_MODE_WP, _const_UFFDIO_WRITEPROTECT_MODE_WP,
+                "UFFDIO_WRITEPROTECT_MODE_WP"
+            );
+            assert_eq!(
+                UFFDIO_WRITEPROTECT_MODE_DONTWAKE, _const_UFFDIO_WRITEPROTECT_MODE_DONTWAKE,
+                "UFFDIO_WRITEPROTECT_MODE_DONTWAKE"
             );
             assert_eq!(UFFDIO_API, _const_UFFDIO_API, "UFFDIO_API");
             assert_eq!(UFFDIO_REGISTER, _const_UFFDIO_REGISTER, "UFFDIO_REGISTER");
