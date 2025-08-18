@@ -19,4 +19,5 @@ cc = "1.0"
 [features]
 default = []
 linux4_14 = []
-linux5_7 = []
+linux5_7 = ["linux4_14"]
+linux5_13 = ["linux5_7"]
