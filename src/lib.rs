@@ -139,6 +139,9 @@ impl Uffd {
     /// Atomically copy a continuous memory chunk into the userfaultfd-registered range, and return
     /// the number of bytes that were successfully copied.
     ///
+    /// If `wp` is `true`, register the pages as write-protected after copying
+    /// (`UFFDIO_COPY_MODE_WP`).
+    ///
     /// If `wake` is `true`, wake up the thread waiting for page fault resolution on the memory
     /// range.
     pub unsafe fn copy(
@@ -146,17 +149,26 @@ impl Uffd {
         src: *const c_void,
         dst: *mut c_void,
         len: usize,
+        wp: bool,
         wake: bool,
     ) -> Result<usize> {
+        let mut mode = 0;
+        if !wake {
+            mode |= raw::UFFDIO_COPY_MODE_DONTWAKE;
+        }
+        #[cfg(feature = "linux5_7")]
+        if wp {
+            mode |= raw::UFFDIO_COPY_MODE_WP;
+        }
+        #[cfg(not(feature = "linux5_7"))]
+        if wp {
+            panic!("UFFDIO_COPY_MODE_WP requires the linux5_7 feature");
+        }
         let mut copy = raw::uffdio_copy {
             src: src as u64,
             dst: dst as u64,
             len: len as u64,
-            mode: if wake {
-                0
-            } else {
-                raw::UFFDIO_COPY_MODE_DONTWAKE
-            },
+            mode,
             copy: 0,
         };
 
@@ -169,49 +181,6 @@ impl Uffd {
             })?;
         if copy.copy < 0 {
             // shouldn't ever get here, as errno should be caught above
-            Err(Error::CopyFailed(Errno::from_i32(-copy.copy as i32)))
-        } else {
-            Ok(copy.copy as usize)
-        }
-    }
-
-    /// Atomically copy a continuous memory chunk into the userfaultfd-registered range and
-    /// register the pages as write-protected, returning the number of bytes successfully copied.
-    ///
-    /// This combines `UFFDIO_COPY` with `UFFDIO_COPY_MODE_WP` to resolve a page fault and
-    /// enable write-protection tracking in a single ioctl.
-    ///
-    /// If `wake` is `true`, wake up the thread waiting for page fault resolution on the memory
-    /// range.
-    #[cfg(feature = "linux5_7")]
-    pub unsafe fn copy_wp(
-        &self,
-        src: *const c_void,
-        dst: *mut c_void,
-        len: usize,
-        wake: bool,
-    ) -> Result<usize> {
-        let mut copy = raw::uffdio_copy {
-            src: src as u64,
-            dst: dst as u64,
-            len: len as u64,
-            mode: raw::UFFDIO_COPY_MODE_WP
-                | if wake {
-                    0
-                } else {
-                    raw::UFFDIO_COPY_MODE_DONTWAKE
-                },
-            copy: 0,
-        };
-
-        let _ =
-            raw::copy(self.as_raw_fd(), &mut copy as *mut raw::uffdio_copy).map_err(|errno| {
-                match errno {
-                    Errno::EAGAIN => Error::PartiallyCopied(copy.copy as usize),
-                    _ => Error::CopyFailed(errno),
-                }
-            })?;
-        if copy.copy < 0 {
             Err(Error::CopyFailed(Errno::from_i32(-copy.copy as i32)))
         } else {
             Ok(copy.copy as usize)
@@ -735,6 +704,7 @@ mod test {
                             uffd.write_protect(mapping, PAGE_SIZE)?;
                             uffd.wake(mapping, PAGE_SIZE)?;
                         }
+                        _ => panic!("unexpected fault kind"),
                     },
                     _ => panic!("unexpected event"),
                 }
@@ -820,7 +790,7 @@ mod test {
                             assert_eq!(addr, mapping);
                             // Resolve the missing fault AND set write-protection in one call
                             let copied =
-                                uffd.copy_wp(src as *const c_void, mapping, PAGE_SIZE, true)?;
+                                uffd.copy(src as *const c_void, mapping, PAGE_SIZE, true, true)?;
                             assert_eq!(copied, PAGE_SIZE);
                         }
                         FaultKind::WriteProtected => {
@@ -830,6 +800,7 @@ mod test {
                             uffd.remove_write_protection(mapping, PAGE_SIZE, true)?;
                             break;
                         }
+                        _ => panic!("unexpected fault kind"),
                     },
                     _ => panic!("unexpected event"),
                 }
